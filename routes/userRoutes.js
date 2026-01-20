@@ -4,16 +4,14 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// REGISTER USER
+// REGISTER
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, role, domain, bio } = req.body;
 
-        // Check if email exists
         const exists = await User.findOne({ email });
         if (exists) return res.status(400).json({ error: "Email already exists" });
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
@@ -26,12 +24,13 @@ router.post('/register', async (req, res) => {
         });
 
         res.json({ message: "User registered", user });
+
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// LOGIN USER
+// LOGIN
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -42,7 +41,6 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Incorrect password" });
 
-        // JWT Token
         const token = jwt.sign(
             { id: user._id, role: user.role },
             process.env.JWT_SECRET,
@@ -58,21 +56,17 @@ router.post('/login', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
 
-    // GET PROFESSIONALS WITH SEARCH & FILTER
+// GET PROFESSIONALS
 router.get("/professionals", async (req, res) => {
     try {
         const { search, domain } = req.query;
 
         let query = { role: "professional" };
 
-        if (search) {
-            query.name = { $regex: search, $options: "i" };
-        }
-
-        if (domain) {
-            query.domain = domain;
-        }
+        if (search) query.name = { $regex: search, $options: "i" };
+        if (domain) query.domain = domain;
 
         const pros = await User.find(query);
         res.json(pros);
@@ -80,8 +74,6 @@ router.get("/professionals", async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-});
-
 });
 
 module.exports = router;
